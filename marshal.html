@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marshal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --blue: #1a6aff;
+    --blue-dim: #0a1f4a;
+    --bg: #06060a;
+    --border: #15151f;
+    --text: #9a9aaa;
+    --text-dim: #3a3a4a;
+    --white: #e8e8f0;
+  }
+  html, body { width:100%; height:100%; background:#06060a; display:flex; align-items:center; justify-content:center; font-family:'Share Tech Mono',monospace; overflow:hidden; }
+  body::before { content:''; position:fixed; inset:0; background:#06060a; z-index:-1; }
+  .fog { position:fixed; inset:0; background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(192,57,43,0.07) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 20% 20%, rgba(80,20,40,0.08) 0%, transparent 60%); z-index:0; animation:fog-shift 12s ease-in-out infinite alternate; }
+  @keyframes fog-shift { 0%{opacity:0.6} 100%{opacity:1} }
+  .grain { position:fixed; inset:-50%; width:200%; height:200%; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); z-index:1; pointer-events:none; animation:grain-move 0.5s steps(1) infinite; }
+  @keyframes grain-move { 0%{transform:translate(0,0)} 20%{transform:translate(-3%,-3%)} 40%{transform:translate(3%,1%)} 60%{transform:translate(-1%,3%)} 80%{transform:translate(2%,-2%)} 100%{transform:translate(0,0)} }
+  .scanlines { position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.15) 3px,rgba(0,0,0,0.15) 4px); z-index:2; pointer-events:none; }
+  .vignette { position:fixed; inset:0; background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,0.85) 100%); z-index:2; pointer-events:none; }
+
+  /* INTRO */
+  .intro { position:fixed; inset:0; background:#000; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; transition:opacity 1.5s ease; cursor:pointer; }
+  .intro.hidden { opacity:0; pointer-events:none; }
+  .intro-skull { font-size:40px; opacity:0.12; animation:skull-pulse 3s ease-in-out infinite; }
+  @keyframes skull-pulse { 0%,100%{opacity:0.08;transform:scale(1)} 50%{opacity:0.18;transform:scale(1.04)} }
+  .intro-line { width:1px; height:30px; background:linear-gradient(180deg,transparent,#1a1a2a,transparent); animation:iline 2.5s ease-in-out infinite; }
+  @keyframes iline { 0%,100%{height:20px;opacity:0.3} 50%{height:44px;opacity:0.8} }
+  .intro-text { font-family:'Share Tech Mono',monospace; font-size:9px; color:#151520; letter-spacing:8px; text-transform:uppercase; animation:itxt 2.5s ease-in-out infinite; }
+  @keyframes itxt { 0%,100%{color:#0d1018} 50%{color:#252535} }
+
+  /* CARD */
+  .card { position:relative; z-index:10; width:400px; opacity:0; transform:translateY(16px); transition:opacity 1.5s ease 0.3s,transform 1.5s ease 0.3s; }
+  .card.visible { opacity:1; transform:translateY(0); }
+
+  /* TOPBAR */
+  .topbar { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+  .topbar-left { display:flex; flex-direction:column; gap:4px; }
+  .topbar-ch { font-size:8px; color:#1a1a2a; letter-spacing:3px; text-transform:uppercase; animation:tbf 9s ease-in-out infinite; }
+  .topbar-sys { font-size:7px; color:#151525; letter-spacing:2px; text-transform:uppercase; }
+  @keyframes tbf { 0%,85%,100%{color:#1a1a2a} 87%{color:#3a3a5a} 89%{color:#1a1a2a} 91%{color:#3a3a5a} 93%{color:#1a1a2a} }
+  .topbar-right { display:flex; align-items:center; gap:8px; }
+  .online-dot { width:5px; height:5px; border-radius:50%; background:#0a1a10; animation:odot 4s ease-in-out infinite; }
+  @keyframes odot { 0%,100%{background:#0a1a10;box-shadow:none} 50%{background:#00cc44;box-shadow:0 0 6px #00cc44} }
+  .online-label { font-size:8px; color:#0a1a10; letter-spacing:3px; text-transform:uppercase; animation:olbl 4s ease-in-out infinite; }
+  @keyframes olbl { 0%,100%{color:#0a1a10} 50%{color:#1a3a1a} }
+
+  /* HEADER */
+  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:36px; }
+  .name { font-family:'Cormorant Garamond',serif; font-size:42px; font-weight:300; color:var(--white); letter-spacing:8px; text-transform:uppercase; line-height:1; animation:name-glitch 9s ease-in-out infinite; }
+  @keyframes name-glitch { 0%,92%,100%{text-shadow:none;transform:none} 93%{text-shadow:3px 0 0 rgba(26,106,255,0.6),-3px 0 0 rgba(255,50,50,0.4);transform:translateX(3px)} 94%{transform:translateX(-2px)} 95%{transform:none;text-shadow:none} }
+  .name::after { content:''; display:block; width:36px; height:1px; background:var(--blue); margin-top:10px; box-shadow:0 0 8px var(--blue-dim); }
+  .title { font-size:9px; color:var(--text-dim); letter-spacing:4px; text-transform:uppercase; margin-top:16px; }
+
+  /* AVATAR */
+  .avatar { width:72px; height:72px; flex-shrink:0; border:1px solid #1a1a28; background:#040408; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+  .avatar-q { font-family:'Cormorant Garamond',serif; font-size:52px; font-weight:300; color:var(--blue); opacity:0.3; line-height:1; animation:qpulse 5s ease-in-out infinite; position:relative; z-index:1; }
+  @keyframes qpulse { 0%,100%{opacity:0.25} 50%{opacity:0.35} 88%{opacity:0.25} 89%{opacity:0.08} 90%{opacity:0.25} }
+  .avatar-scan { position:absolute; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(26,106,255,0.25),transparent); z-index:2; animation:ascan 3.5s linear infinite; }
+  @keyframes ascan { 0%{top:-1px} 100%{top:73px} }
+
+  /* DIVIDERS */
+  .div-line { height:1px; background:var(--border); margin:28px 0; position:relative; }
+  .div-line span { position:absolute; right:0; top:-7px; font-size:9px; color:var(--text-dim); letter-spacing:2px; }
+
+  /* SPECS */
+  .specs { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); margin-bottom:28px; border:1px solid var(--border); }
+  .spec { background:var(--bg); padding:14px 16px; }
+  .spec-l { font-size:8px; color:var(--text-dim); letter-spacing:3px; text-transform:uppercase; margin-bottom:5px; }
+  .spec-v { font-size:11px; color:var(--text); letter-spacing:1px; }
+
+  /* BARS */
+  .bars { margin-bottom:28px; }
+  .bar-row { margin-bottom:14px; }
+  .bar-meta { display:flex; justify-content:space-between; font-size:9px; color:var(--text-dim); letter-spacing:2px; margin-bottom:6px; }
+  .bar-meta span:last-child { color:var(--blue); opacity:0.7; }
+  .bar-bg { height:1px; background:#111118; }
+  .bar-fg { height:100%; background:linear-gradient(90deg,var(--blue-dim),var(--blue)); box-shadow:0 0 6px rgba(26,106,255,0.3); width:0; }
+  .bar-fg.animate { animation:bar-grow 2s cubic-bezier(0.16,1,0.3,1) forwards; animation-delay:var(--delay,0s); }
+  @keyframes bar-grow { to { width:var(--w); } }
+
+  /* TAGS */
+  .tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:24px; }
+  .tag { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); border:1px solid #111118; padding:5px 10px; cursor:default; transition:all 0.3s; position:relative; overflow:hidden; }
+  .tag::before { content:''; position:absolute; left:-100%; top:0; width:100%; height:100%; background:rgba(26,106,255,0.07); transition:left 0.3s; }
+  .tag:hover::before { left:0; }
+  .tag:hover { color:var(--blue); border-color:var(--blue-dim); }
+
+  /* SOCIAL */
+  .social-links { display:flex; gap:12px; align-items:center; margin-bottom:24px; }
+  .social-link { display:flex; align-items:center; justify-content:center; width:32px; height:32px; border:1px solid #111118; color:var(--text-dim); text-decoration:none; transition:all 0.3s; }
+  .social-link svg { width:15px; height:15px; }
+  .social-link:hover { color:var(--blue); border-color:var(--blue-dim); background:rgba(26,106,255,0.05); box-shadow:0 0 10px rgba(26,106,255,0.1); }
+
+  /* FOOTER */
+  .card-line-bot { height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); }
+  .footer { display:flex; justify-content:space-between; align-items:center; margin-top:16px; }
+  .footer-id { font-size:9px; color:#1e1e28; letter-spacing:2px; animation:idflicker 8s ease-in-out infinite; }
+  @keyframes idflicker { 0%,90%,100%{color:#1e1e28} 91%{color:var(--text-dim)} 92%{color:#1e1e28} 93%{color:var(--text-dim)} 94%{color:#1e1e28} }
+  .cursor { display:inline-block; width:6px; height:12px; background:var(--blue); vertical-align:middle; margin-left:4px; opacity:0.5; animation:cur 1s step-end infinite; }
+  @keyframes cur { 0%,100%{opacity:0.5} 50%{opacity:0} }
+
+  /* MUTE */
+  .mute-btn { position:fixed; bottom:22px; right:22px; z-index:50; background:rgba(6,6,10,0.95); border:1px solid #1a1a28; color:var(--text-dim); font-size:14px; padding:8px 12px; cursor:pointer; transition:all 0.3s; opacity:0; pointer-events:none; display:flex; align-items:center; }
+  .mute-btn.visible { opacity:1; pointer-events:all; }
+  .mute-btn:hover { color:var(--blue); border-color:var(--blue-dim); background:rgba(26,106,255,0.05); }
+</style>
+</head>
+<body>
+<div class="fog"></div>
+<div class="grain"></div>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<div class="intro" id="intro">
+  <div class="intro-skull">☠</div>
+  <div class="intro-line"></div>
+  <div class="intro-text">PRESS TO ENTER</div>
+</div>
+
+<div class="card" id="card">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-ch">CH_01 // MARSHAL.DAT</div>
+      <div class="topbar-sys">SYS::PROFILE_VIEW / AUTHORIZED</div>
+    </div>
+    <div class="topbar-right">
+      <div class="online-dot"></div>
+      <div class="online-label">ONLINE</div>
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="header-left">
+      <div class="name">Marshal</div>
+      <div class="title">Cyber Threat Operator</div>
+    </div>
+    <div class="avatar">
+      <div class="avatar-scan"></div>
+      <div class="avatar-q">?</div>
+    </div>
+  </div>
+
+  <div class="specs">
+    <div class="spec"><div class="spec-l">Specialization</div><div class="spec-v">Cyber Security</div></div>
+    <div class="spec"><div class="spec-l">Focus</div><div class="spec-v">Anti-DDoS / DoS</div></div>
+    <div class="spec"><div class="spec-l">Domain</div><div class="spec-v">Network Defense</div></div>
+    <div class="spec"><div class="spec-l">Clearance</div><div class="spec-v">Operator</div></div>
+  </div>
+
+  <div class="div-line"><span>// METRICS</span></div>
+
+  <div class="bars">
+    <div class="bar-row">
+      <div class="bar-meta"><span>Threat Mitigation</span><span>94%</span></div>
+      <div class="bar-bg"><div class="bar-fg" style="--w:94%;--delay:0.2s"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-meta"><span>Attack Vector Analysis</span><span>91%</span></div>
+      <div class="bar-bg"><div class="bar-fg" style="--w:91%;--delay:0.4s"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-meta"><span>Network Recon</span><span>88%</span></div>
+      <div class="bar-bg"><div class="bar-fg" style="--w:88%;--delay:0.6s"></div></div>
+    </div>
+  </div>
+
+  <div class="div-line"><span>// TAGS</span></div>
+
+  <div class="tags">
+    <span class="tag">Anti-DDoS</span>
+    <span class="tag">Layer 4</span>
+    <span class="tag">Layer 7</span>
+    <span class="tag">UDP Flood</span>
+    <span class="tag">SYN Flood</span>
+    <span class="tag">HTTP Flood</span>
+    <span class="tag">Rate Limiting</span>
+    <span class="tag">Null Route</span>
+    <span class="tag">BGP Blackhole</span>
+    <span class="tag">CF Bypass</span>
+    <span class="tag">WAF Bypass</span>
+    <span class="tag">Captcha Bypass</span>
+    <span class="tag">OpSec</span>
+  </div>
+
+  <div class="social-links">
+    <a class="social-link" href="https://t.me/fuckmarshal" target="_blank" title="@fuckmarshal">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.8 2.6L1.4 10.2c-1.3.5-1.3 1.3-.2 1.6l5.1 1.6 11.8-7.4c.6-.3 1.1-.1.7.3L8.6 16.4l-.4 5.2c.6 0 .9-.3 1.2-.6l2.9-2.8 5.1 3.7c.9.5 1.6.3 1.9-.9L23 4c.4-1.5-.6-2.1-1.2-1.4z"/></svg>
+    </a>
+    <a class="social-link" href="mailto:fkmrshl@proton.me" title="fkmrshl@proton.me">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3 8l9-5 9 5v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8z"/><path d="M3 8l9 6 9-6" stroke-linecap="round"/></svg>
+    </a>
+  </div>
+
+  <div class="card-line-bot"></div>
+  <div class="footer">
+    <div class="footer-id">0x4D52SHL::marshal<span class="cursor"></span></div>
+  </div>
+</div>
+
+<button class="mute-btn" id="muteBtn">
+  <svg id="muteIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+    <path d="M11 5L6 9H2v6h4l5 4V5z" stroke-linejoin="round"/>
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+  </svg>
+</button>
+
+<audio id="bgAudio" loop preload="auto">
+  <source src="https://www.dropbox.com/scl/fi/af3hjc8sg3wjtt56sgepu/.mp3?rlkey=rtrpvfinrx7fehsdlmbggr35d&st=w2rm183c&dl=1" type="audio/mpeg">
+</audio>
+
+<script>
+  const intro = document.getElementById('intro');
+  const card = document.getElementById('card');
+  const audio = document.getElementById('bgAudio');
+  const muteBtn = document.getElementById('muteBtn');
+  const muteIcon = document.getElementById('muteIcon');
+  let muted = false;
+  let entered = false;
+
+  function enterSite() {
+    if (entered) return;
+    entered = true;
+    intro.classList.add('hidden');
+    card.classList.add('visible');
+    muteBtn.classList.add('visible');
+    setTimeout(() => {
+      document.querySelectorAll('.bar-fg').forEach(b => b.classList.add('animate'));
+    }, 600);
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) { try { new AC().resume(); } catch(e){} }
+    audio.currentTime = 0; audio.volume = 0; audio.muted = false;
+    const p = audio.play();
+    if (p) p.then(() => {
+      let vol = 0;
+      const fi = setInterval(() => { vol = Math.min(vol+0.015, 0.6); audio.volume = vol; if(vol>=0.6) clearInterval(fi); }, 60);
+    }).catch(()=>{});
+  }
+
+  intro.addEventListener('pointerdown', enterSite);
+
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    audio.muted = muted;
+    muteIcon.innerHTML = muted
+      ? '<path d="M11 5L6 9H2v6h4l5 4V5z" stroke-linejoin="round"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>'
+      : '<path d="M11 5L6 9H2v6h4l5 4V5z" stroke-linejoin="round"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>';
+  });
+</script>
+</body>
+</html>
